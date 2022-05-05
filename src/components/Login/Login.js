@@ -1,56 +1,96 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useReducer } from 'react';
 
 import Card from '../UI/Card/Card';
 import styles from './Login.module.css';
 import Button from '../UI/Button/Button';
 
+const emailReducer = (prevState, action) => {
+  if (action.type === 'USER_INPUT') {
+    return {
+      value: action.value,
+      isValid: action.value.includes('@'),
+    };
+  }
+
+  if (action.type === 'INPUT_BLUR') {
+    return {
+      value: prevState.value,
+      isValid: prevState.value.includes('@'),
+    };
+  }
+
+  return {
+    value: '',
+    isValid: false,
+  };
+};
+
 const Login = (props) => {
-  const [inputEmail, setInputEmail] = useState('');
-  const [emailIsValid, setEmailIsValid] = useState();
+  // исп useReducer для комбинирования этих двух состояний
+
+  // const [inputEmail, setInputEmail] = useState('');
+  // const [emailIsValid, setEmailIsValid] = useState();
+
+  ////////////////////////////////////////////////////////
+
   const [inputPassword, setInputPassword] = useState('');
   const [passwordIsValid, setPasswordIsValid] = useState();
   const [formIsValid, setFormIsValid] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setFormIsValid(
-        inputEmail.includes('@') && inputPassword.trim().length > 7
-      );
-    }, 1000);
+  const [emailState, dispatchEmailState] = useReducer(emailReducer, {
+    value: '',
+    isValid: undefined,
+  });
 
-    // функция очистки
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [inputEmail, inputPassword]);
+  // useEffect
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //     setFormIsValid(
+  //       inputEmail.includes('@') && inputPassword.trim().length > 7
+  //     );
+  //   }, 1000);
+
+  //   // функция очистки
+  //   return () => {
+  //     clearTimeout(timer);
+  //   };
+  // }, [inputEmail, inputPassword]);
+
+  // const emailChangeHandler = (event) => {
+  //   setInputEmail(event.target.value);
+
+  //   // setFormIsValid(
+  //   //   event.target.value.includes('@') && inputPassword.trim().length > 7
+  //   // );
+  // };
 
   const emailChangeHandler = (event) => {
-    setInputEmail(event.target.value);
+    // setInputEmail(event.target.value);
+    dispatchEmailState({ type: 'USER_INPUT', value: event.target.value });
 
-    // setFormIsValid(
-    //   event.target.value.includes('@') && inputPassword.trim().length > 7
-    // );
+    setFormIsValid(
+      event.target.value.includes('@') && inputPassword.trim().length > 7
+    );
   };
 
   const passwordChangeHandler = (event) => {
     setInputPassword(event.target.value);
 
-    // setFormIsValid(
-    //   event.target.value.trim().length > 6 && inputEmail.includes('@')
-    // );
+    setFormIsValid(event.target.value.trim().length > 7 && emailState.isValid);
   };
 
   const validateEmailHandler = () => {
-    setEmailIsValid(inputEmail.includes('@'));
+    // setEmailIsValid(emailState.isValid);
+    dispatchEmailState({ type: 'INPUT_BLUR' });
   };
 
   const validatePasswordHandler = () => {
-    setPasswordIsValid(inputPassword.trim().length > 6);
+    setPasswordIsValid(inputPassword.trim().length > 7);
   };
 
   const submitHandler = (event) => {
     event.preventDefault();
-    props.onLogin(inputEmail, inputPassword);
+    props.onLogin(emailState.value, inputPassword);
   };
 
   return (
@@ -58,14 +98,14 @@ const Login = (props) => {
       <form onSubmit={submitHandler}>
         <div
           className={`${styles.control} ${
-            emailIsValid === false ? styles.invalid : ''
+            emailState.isValid === false ? styles.invalid : ''
           }`}
         >
           <label htmlFor='email'>Email</label>
           <input
             type='email'
             id='email'
-            value={inputEmail}
+            value={emailState.value}
             onChange={emailChangeHandler}
             onBlur={validateEmailHandler}
           />
